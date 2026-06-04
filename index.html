@@ -130,6 +130,24 @@
   .rankrow .fill{height:100%; background:linear-gradient(90deg,var(--gold),var(--rose)); border-radius:6px}
   .rankrow .val{width:74px; text-align:right; font-variant-numeric:tabular-nums; font-weight:680; font-size:12.5px}
   .empty{padding:30px; text-align:center; color:var(--muted)}
+  /* Profit-kalkulátor */
+  .params{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:15px; background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); margin:6px 0 16px}
+  .param .plabel{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:8px; display:flex; justify-content:space-between; align-items:baseline; gap:6px}
+  .param .plabel b{color:var(--gold-dark); font-size:14px; white-space:nowrap}
+  .param input[type=range]{width:100%; accent-color:var(--gold); cursor:pointer}
+  .param select{width:100%; font:inherit; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--cream); color:var(--ink)}
+  .dash{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 10px}
+  .dcard{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow)}
+  .dcard.hl{background:linear-gradient(135deg,#fbf1dd,#fff); border-color:#e6d3aa}
+  .dcard .dl{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+  .dcard .dv{font-size:23px; font-weight:700; margin-top:5px; color:var(--ink); letter-spacing:-.01em} .dcard .dv small{font-size:12px; color:var(--muted); font-weight:500}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:6px 16px; box-shadow:var(--shadow)}
+  .kv{display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #f4eee3; font-size:13px}
+  .kv:last-child{border-bottom:none} .kv span{color:#6f6657} .kv b{font-variant-numeric:tabular-nums; white-space:nowrap}
+  .kv.total{font-size:15px; font-weight:700} .kv.total b{color:var(--gold-dark)}
+  #pf-retail .seg{background:#f3eee6; color:#9a7d4f}
+  @media(max-width:900px){.dash{grid-template-columns:repeat(2,1fr)} .twocol{grid-template-columns:1fr}}
   footer{margin-top:24px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); line-height:1.6}
 </style>
 </head>
@@ -145,6 +163,7 @@
     <button class="tab-btn" data-tab="parositas">② Párosítás</button>
     <button class="tab-btn" data-tab="rutinok">③ Otthoni rutinok</button>
     <button class="tab-btn" data-tab="fedezet">④ Fedezet-elemzés</button>
+    <button class="tab-btn" data-tab="profit">⑤ 💰 Profit-kalkulátor</button>
   </div>
 
   <!-- ① ÁRLISTA -->
@@ -221,6 +240,36 @@
     </table></div>
     <h2 class="sec">Fedezet / perc rangsor <small>— a klinika szűk erőforrása az idő; min. eladási áron</small></h2>
     <div class="rank" id="fed-rank"></div>
+  </section>
+
+  <!-- ⑤ PROFIT-KALKULÁTOR -->
+  <section class="tabpane" id="pane-profit">
+    <h2 class="sec">Interaktív profit-kalkulátor <small>— állítsd a feltevéseket, minden élőben számol. Az ártényező a retail termékekre, a kezelésekre és a rutinokra is hat.</small></h2>
+    <div class="params">
+      <div class="param"><div class="plabel"><span>Eladási ár <span class="ft">(ajánlott/webshop = 100%)</span></span> <b id="pf-priceLabel">100%</b></div><input type="range" id="pf-price" min="60" max="160" value="100" step="5"></div>
+      <div class="param"><div class="plabel"><span>Vendég / hó</span> <b id="pf-guestsLabel">100</b></div><input type="range" id="pf-guests" min="0" max="500" value="100" step="10"></div>
+      <div class="param"><div class="plabel"><span>Cross-sell arány <span class="ft">(vesz otthoni terméket)</span></span> <b id="pf-xsLabel">30%</b></div><input type="range" id="pf-xs" min="0" max="100" value="30" step="5"></div>
+      <div class="param"><div class="plabel"><span>Átlag retail kosár <span class="ft">(cross-sell vendég, bruttó)</span></span> <b id="pf-basketLabel">40 000 Ft</b></div><input type="range" id="pf-basket" min="0" max="200000" value="40000" step="5000"></div>
+      <div class="param"><div class="plabel"><span>Tipikus kezelés <span class="ft">(a vendég-modellhez)</span></span></div><select id="pf-treat"></select></div>
+    </div>
+    <div class="dash" id="pf-dash"></div>
+
+    <h2 class="sec">A · Retail termék-profit <small>— rendezve árrés szerint; beszerzés = szakmai nettó, eladás = ajánlott × ártényező</small></h2>
+    <div class="tablecard"><table>
+      <thead><tr><th>Termék</th><th class="num">Kiszer.</th><th class="num">Beszerzés<br>(nettó)</th><th class="num">Eladás<br>(bruttó)</th><th class="num">Árrés/db<br>(nettó)</th><th class="num">Árrés%</th><th class="num">Markup</th></tr></thead>
+      <tbody id="pf-retail"></tbody>
+    </table></div>
+
+    <h2 class="sec">C · Csomag / rutin-profit <small>— a bőrtípus-rutin teljes retail értéke − a benne lévő termékek beszerzése</small></h2>
+    <div class="tablecard"><table>
+      <thead><tr><th>Rutin</th><th>Bőrtípus</th><th class="num">Retail (bruttó)</th><th class="num">Beszerzés (nettó)</th><th class="num">Csomag-profit (nettó)</th><th class="num">%</th></tr></thead>
+      <tbody id="pf-routines"></tbody>
+    </table></div>
+
+    <div class="twocol">
+      <div><h2 class="sec">B · Vendég-érték (cross-sell)</h2><div class="card" id="pf-guest"></div></div>
+      <div><h2 class="sec">D · Forgalom & megtérülés</h2><div class="card" id="pf-roi"></div></div>
+    </div>
   </section>
 
   <footer id="foot"></footer>
@@ -311,6 +360,1340 @@ const PAIR = {
     {"name":"Hajhullás kezelés rutin","skin":"Hajhullás","total":54000,"items":[
       {"n":"SILIA shampoo 200 ml","p":27300},{"n":"SILIA hair conditioner 200 ml","p":26700}]}
   ]
+};
+const PROFIT = {
+"meta": {
+"generated": "2026-06-04",
+"afa": 1.27,
+"sources": "kezelési árlista 2026 · lakossági árlista 2026 · c.s.m. árajánlat #362 (szalon) + #363 (retail) · kleanthous.hu webshop",
+"note": "A webshop ár = a lakossági ajánlott eladási ár (46/46 termék egyezik). A retail markup fix ≈2,07× (eladási bruttó ÷ beszerzési nettó). Eladási árak bruttók, beszerzési (szakmai) árak nettók."
+},
+"afa": 1.27,
+"retail": [
+{
+"cikk": "S021",
+"nev": "c.s.m. cream – high performance",
+"vonal": "SkinTone",
+"ml": "50 ml",
+"beszN": 44000,
+"ajB": 91300
+},
+{
+"cikk": "S121",
+"nev": "Xtreme c.s.m. cream",
+"vonal": "Xtreme",
+"ml": "50 ml",
+"beszN": 70900,
+"ajB": 147100
+},
+{
+"cikk": "S091",
+"nev": "c.s.m. protection cream",
+"vonal": "SkinTone",
+"ml": "50 ml",
+"beszN": 44000,
+"ajB": 91300
+},
+{
+"cikk": "S111",
+"nev": "Xtreme c.s.m. serum",
+"vonal": "Xtreme",
+"ml": "50 ml",
+"beszN": 50500,
+"ajB": 104800
+},
+{
+"cikk": "S031",
+"nev": "c.s.m. Impact gel (anti-wrinkle)",
+"vonal": "SkinTone",
+"ml": "50 ml",
+"beszN": 50500,
+"ajB": 104800
+},
+{
+"cikk": "S041",
+"nev": "c.s.m. eye mask / szemmaszk",
+"vonal": "SkinTone",
+"ml": "30 ml",
+"beszN": 31300,
+"ajB": 64900
+},
+{
+"cikk": "S101",
+"nev": "c.s.m. moisturizing mask",
+"vonal": "SkinTone",
+"ml": "50 ml",
+"beszN": 30000,
+"ajB": 62300
+},
+{
+"cikk": "S051",
+"nev": "sensitive enzyme peeling",
+"vonal": "SkinTone",
+"ml": "50 ml",
+"beszN": 15800,
+"ajB": 32800
+},
+{
+"cikk": "S061",
+"nev": "refreshing cleansing water",
+"vonal": "SkinTone",
+"ml": "200 ml",
+"beszN": 11000,
+"ajB": 22800
+},
+{
+"cikk": "S071",
+"nev": "deep cleansing lotion",
+"vonal": "SkinTone",
+"ml": "200 ml",
+"beszN": 11200,
+"ajB": 23200
+},
+{
+"cikk": "S081",
+"nev": "c.s.m. body cream / testkrém",
+"vonal": "SkinTone",
+"ml": "200 ml",
+"beszN": 31700,
+"ajB": 65900
+},
+{
+"cikk": "V011",
+"nev": "ultra cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 12800,
+"ajB": 26500
+},
+{
+"cikk": "V021",
+"nev": "day cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 17800,
+"ajB": 36800
+},
+{
+"cikk": "V031",
+"nev": "night cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 18700,
+"ajB": 38700
+},
+{
+"cikk": "V311",
+"nev": "balancer cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 16800,
+"ajB": 34800
+},
+{
+"cikk": "V321",
+"nev": "balancer mask",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 16800,
+"ajB": 34800
+},
+{
+"cikk": "V041",
+"nev": "repair mask",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 17800,
+"ajB": 36800
+},
+{
+"cikk": "V051",
+"nev": "neck cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 16400,
+"ajB": 33900
+},
+{
+"cikk": "V061",
+"nev": "eye cream",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 17900,
+"ajB": 37000
+},
+{
+"cikk": "V071",
+"nev": "cleansing foam",
+"vonal": "24/7",
+"ml": "190 ml",
+"beszN": 9600,
+"ajB": 19800
+},
+{
+"cikk": "V081",
+"nev": "tonic foam",
+"vonal": "24/7",
+"ml": "190 ml",
+"beszN": 8500,
+"ajB": 17700
+},
+{
+"cikk": "V101",
+"nev": "couperose serum",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 18400,
+"ajB": 38300
+},
+{
+"cikk": "V111",
+"nev": "balancer serum",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 18400,
+"ajB": 38300
+},
+{
+"cikk": "V121",
+"nev": "firming serum",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 21600,
+"ajB": 44900
+},
+{
+"cikk": "V161",
+"nev": "complex h serum",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 21600,
+"ajB": 44900
+},
+{
+"cikk": "V131",
+"nev": "high performance serum",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 21600,
+"ajB": 44900
+},
+{
+"cikk": "V331",
+"nev": "sensitive cream",
+"vonal": "24/7",
+"ml": "50 ml",
+"beszN": 18400,
+"ajB": 38200
+},
+{
+"cikk": "V341",
+"nev": "sensitive cleanser 2in1",
+"vonal": "24/7",
+"ml": "200 ml",
+"beszN": 14100,
+"ajB": 29200
+},
+{
+"cikk": "V351",
+"nev": "sensitive fluid",
+"vonal": "24/7",
+"ml": "30 ml",
+"beszN": 18700,
+"ajB": 38800
+},
+{
+"cikk": "B081",
+"nev": "hand & nail treatment",
+"vonal": "SILIA/test",
+"ml": "50 ml",
+"beszN": 14300,
+"ajB": 29700
+},
+{
+"cikk": "B011",
+"nev": "perfect bust / mellkrém",
+"vonal": "SILIA/test",
+"ml": "100 ml",
+"beszN": 19000,
+"ajB": 39300
+},
+{
+"cikk": "B021",
+"nev": "body contour",
+"vonal": "SILIA/test",
+"ml": "200 ml",
+"beszN": 14400,
+"ajB": 29800
+},
+{
+"cikk": "B041",
+"nev": "shampoo",
+"vonal": "SILIA/test",
+"ml": "200 ml",
+"beszN": 13200,
+"ajB": 27300
+},
+{
+"cikk": "B161",
+"nev": "hair conditioner",
+"vonal": "SILIA/test",
+"ml": "200 ml",
+"beszN": 12900,
+"ajB": 26700
+},
+{
+"cikk": "B051",
+"nev": "sun protection SPF 20",
+"vonal": "SILIA/test",
+"ml": "100 ml",
+"beszN": 15000,
+"ajB": 31000
+},
+{
+"cikk": "B131",
+"nev": "sun protection SPF 50",
+"vonal": "SILIA/test",
+"ml": "100 ml",
+"beszN": 15000,
+"ajB": 31000
+},
+{
+"cikk": "B091",
+"nev": "body shape foam",
+"vonal": "SILIA/test",
+"ml": "190 ml",
+"beszN": 23300,
+"ajB": 48300
+},
+{
+"cikk": "B071",
+"nev": "body shape cream",
+"vonal": "SILIA/test",
+"ml": "200 ml",
+"beszN": 23300,
+"ajB": 48400
+},
+{
+"cikk": "B251",
+"nev": "hair growth serum",
+"vonal": "SILIA/test",
+"ml": "125 ml",
+"beszN": 39800,
+"ajB": 82400
+},
+{
+"cikk": "C011",
+"nev": "skinjection lifting patch face",
+"vonal": "SKINJECTION",
+"ml": "17 ml",
+"beszN": 8100,
+"ajB": 16800
+},
+{
+"cikk": "M011",
+"nev": "cellular system cream (luxus)",
+"vonal": "DR KLEANTHOUS",
+"ml": "50 ml",
+"beszN": 104200,
+"ajB": 216000
+},
+{
+"cikk": "M021",
+"nev": "cellular system eye gel",
+"vonal": "DR KLEANTHOUS",
+"ml": "15 ml",
+"beszN": 29100,
+"ajB": 60500
+},
+{
+"cikk": "M031",
+"nev": "cellular system mask",
+"vonal": "DR KLEANTHOUS",
+"ml": "50 ml",
+"beszN": 30500,
+"ajB": 63200
+},
+{
+"cikk": "M041",
+"nev": "cellular system cleanser",
+"vonal": "DR KLEANTHOUS",
+"ml": "125 ml",
+"beszN": 10600,
+"ajB": 22000
+},
+{
+"cikk": "M051",
+"nev": "cellular system liquid",
+"vonal": "DR KLEANTHOUS",
+"ml": "125 ml",
+"beszN": 9700,
+"ajB": 20200
+},
+{
+"cikk": "M071",
+"nev": "cellular system skin support / detox",
+"vonal": "DR KLEANTHOUS",
+"ml": "100 ml",
+"beszN": 26100,
+"ajB": 54000
+}
+],
+"kura": [
+{
+"cikk": "S011",
+"nev": "Sono beauty lifting IMPACT kúra csomag",
+"kiszereles": "6 kezelés",
+"beszN": 157800,
+"ajB": 516600
+},
+{
+"cikk": "S112",
+"nev": "Sono beauty lifting XTREME kúra csomag",
+"kiszereles": "6 kezelés",
+"beszN": 157800,
+"ajB": 516600
+}
+],
+"treatments": [
+{
+"id": "t1",
+"name": "24/7 firming kezelés – száraz bőrre",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 6900,
+"retailMin": 28000,
+"retailMax": 42000,
+"products": [
+"p8"
+],
+"match": "exact",
+"routine": "Vízhiányos bőr rutin"
+},
+{
+"id": "t2",
+"name": "24/7 couperose kezelés – rozaceás bőrre",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 7300,
+"retailMin": 29000,
+"retailMax": 43500,
+"products": [
+"p12"
+],
+"match": "exact",
+"routine": "Rozaceás bőr rutin"
+},
+{
+"id": "t3",
+"name": "24/7 complex h kezelés – mimikai ráncokra",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 7000,
+"retailMin": 28000,
+"retailMax": 42000,
+"products": [
+"p11"
+],
+"match": "exact",
+"routine": "Vízhiányos bőr rutin"
+},
+{
+"id": "t4",
+"name": "24/7 high performance kezelés – érett bőrre",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 7300,
+"retailMin": 29000,
+"retailMax": 43500,
+"products": [
+"p9"
+],
+"match": "exact",
+"routine": "Anti-aging rutin"
+},
+{
+"id": "t5",
+"name": "24/7 balancer kezelés – problémás bőrre",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 7200,
+"retailMin": 29000,
+"retailMax": 43500,
+"products": [
+"p13"
+],
+"match": "exact",
+"routine": "Aknés bőr rutin"
+},
+{
+"id": "t6",
+"name": "24/7 sensitive care kezelés – érzékeny bőrre",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 6700,
+"retailMin": 27000,
+"retailMax": 40500,
+"products": [
+"p4",
+"p3",
+"p14"
+],
+"match": "exact",
+"routine": "Érzékeny bőr rutin"
+},
+{
+"id": "t7",
+"name": "Skin sensation sono lifting kezelés",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 9000,
+"retailMin": 36000,
+"retailMax": 54000,
+"products": [
+"p2"
+],
+"match": "likely",
+"note": "Weboldal: c.s.m. + sonorezonancia; a sono cream a valószínű bázis."
+},
+{
+"id": "t8",
+"name": "Perfect Lips ajakvolumen kezelés",
+"group": "Arckezelések",
+"time": "30 perc",
+"material": 3300,
+"retailMin": 13000,
+"retailMax": 19500,
+"products": [],
+"match": "none",
+"note": "Weboldal: otthoni ápoló = C.S.M. tápláló szemmaszk (az árajánlatban nincs SALON SIZE párja)."
+},
+{
+"id": "t9",
+"name": "Arckontúrkezelés",
+"group": "Arckezelések",
+"time": "75 perc",
+"material": 21000,
+"retailMin": 63000,
+"retailMax": 94500,
+"products": [],
+"match": "none",
+"note": "Weboldal: liquid tonik + fátyolmaszk + ultrahang (Sonostar); önálló SALON SIZE termék nem azonosítható egyértelműen."
+},
+{
+"id": "t10",
+"name": "Prémium Gold kezelés",
+"group": "Arckezelések",
+"time": "75 perc",
+"material": 13000,
+"retailMin": 39000,
+"retailMax": 58500,
+"products": [],
+"match": "none",
+"note": "A weboldalon nincs külön leírás; konkrét termék nem azonosítható."
+},
+{
+"id": "t11",
+"name": "Immune Boost kezelés",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 15300,
+"retailMin": 46000,
+"retailMax": 69000,
+"products": [
+"p7"
+],
+"match": "likely",
+"note": "Weboldal: »a kezelés során használt SkinTone Impact anti-aging gél« → IMPACT c.s.m. gél.",
+"routine": "Anti-aging rutin"
+},
+{
+"id": "t12",
+"name": "SkinTone Xtreme kezelés",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 15000,
+"retailMin": 45000,
+"retailMax": 67500,
+"products": [
+"p18"
+],
+"match": "exact"
+},
+{
+"id": "t13",
+"name": "SKINJECTION sono lifting patch kezelés",
+"group": "Arckezelések",
+"time": "60 perc",
+"material": 20500,
+"retailMin": 61000,
+"retailMax": 91500,
+"products": [
+"p5"
+],
+"match": "exact",
+"note": "A patch egységára 11 500 Ft/db (5 db-os SALON SIZE csomag); a 20 500 Ft anyagköltség valószínűleg patch + kísérő hatóanyag."
+},
+{
+"id": "t14",
+"name": "Summer Breeze regeneráló lifting kezelés",
+"group": "Arckezelések",
+"time": "75 perc",
+"material": 20000,
+"retailMin": 60000,
+"retailMax": 90000,
+"products": [],
+"match": "none",
+"note": "A weboldalon nincs külön leírás; konkrét termék nem azonosítható."
+},
+{
+"id": "t15",
+"name": "SkinTone Sono beauty lifting kezelés (1 alkalom)",
+"group": "Prémium arckezelések",
+"time": "75 perc",
+"material": 36000,
+"retailMin": 72000,
+"retailMax": 108000,
+"products": [
+"p19"
+],
+"match": "exact"
+},
+{
+"id": "t16",
+"name": "SkinTone Sono beauty lifting kúra (6 alkalom)",
+"group": "Prémium arckezelések",
+"time": "6 × 75 perc",
+"material": 283000,
+"retailMin": 492000,
+"retailMax": 492000,
+"home": "SkinTone IMPACT gél / XTREME szérum 50 ml",
+"products": [
+"p19"
+],
+"match": "exact"
+},
+{
+"id": "t17",
+"name": "SILIA body shape testkezelő kúra (6 alkalom)",
+"group": "Testkezelések",
+"time": "6 × 90 perc",
+"material": 83000,
+"retailMin": 249000,
+"retailMax": 373500,
+"home": "masszázskefe",
+"products": [],
+"match": "none",
+"note": "Weboldal: otthoni = SILIA body shape krém/hab + masszázskefe. SILIA SALON SIZE az árajánlatban NINCS (külön beszerzés / otthoni rutin).",
+"routine": "Cellulit stop rutin"
+},
+{
+"id": "t18",
+"name": "SILIA mellkezelés",
+"group": "Testkezelések",
+"time": "20 perc",
+"material": 3600,
+"retailMin": 11000,
+"retailMax": 16500,
+"products": [],
+"match": "none",
+"note": "Otthoni megfelelő: SILIA perfect bust (kismama rutin). SALON SIZE az árajánlatban nincs."
+},
+{
+"id": "t19",
+"name": "SILIA felkar kúra (6 alkalom)",
+"group": "Testkezelések",
+"time": "6 × 25 perc",
+"material": 33000,
+"retailMin": 99000,
+"retailMax": 148500,
+"products": [],
+"match": "none",
+"note": "SILIA testvonal; SALON SIZE az árajánlatban nincs."
+}
+],
+"salonProducts": [
+{
+"id": "p1",
+"idx": 1,
+"name": "SkinTone c.s.m. body cream SALON SIZE 200 ml",
+"qty": 1,
+"gross": 36100,
+"unit": 36100,
+"retailRef": "SkinTone c.s.m. body cream 200 ml — retail 65 900 Ft"
+},
+{
+"id": "p2",
+"idx": 2,
+"name": "SkinTone c.s.m. sono cream SALON SIZE",
+"qty": 1,
+"gross": 35700,
+"unit": 35700
+},
+{
+"id": "p3",
+"idx": 3,
+"name": "24/7 sensitive cleanser 2 in 1 SALON SIZE",
+"qty": 1,
+"gross": 15900,
+"unit": 15900,
+"retailRef": "24/7 sensitive cleanser 2 in 1 200 ml — retail 29 200 Ft"
+},
+{
+"id": "p4",
+"idx": 4,
+"name": "24/7 sensitive cream SALON SIZE 100 ml",
+"qty": 1,
+"gross": 35200,
+"unit": 35200,
+"retailRef": "24/7 sensitive cream 50 ml — retail 38 200 Ft"
+},
+{
+"id": "p5",
+"idx": 5,
+"name": "SKINJECTION instant hydro lifting patch face 17 ml",
+"qty": 5,
+"gross": 57500,
+"unit": 11500,
+"retailRef": "SKINJECTION patch 17 ml — retail 16 800 Ft/db"
+},
+{
+"id": "p6",
+"idx": 6,
+"name": "SkinTone sensitive enzyme peeling SALON SIZE 300 ml",
+"qty": 1,
+"gross": 47400,
+"unit": 47400,
+"retailRef": "enzyme peeling 50 ml — retail 32 800 Ft"
+},
+{
+"id": "p7",
+"idx": 7,
+"name": "SkinTone IMPACT c.s.m. gel SALON SIZE 125 ml",
+"qty": 1,
+"gross": 113600,
+"unit": 113600,
+"retailRef": "IMPACT c.s.m. gel 50 ml — retail 104 800 Ft"
+},
+{
+"id": "p8",
+"idx": 8,
+"name": "24/7 firming serum SALON SIZE 50 ml",
+"qty": 1,
+"gross": 47300,
+"unit": 47300
+},
+{
+"id": "p9",
+"idx": 9,
+"name": "24/7 high performance serum SALON SIZE 50 ml",
+"qty": 1,
+"gross": 47500,
+"unit": 47500
+},
+{
+"id": "p10",
+"idx": 10,
+"name": "SkinTone c.s.m. moisturizing mask SALON SIZE 200 ml",
+"qty": 1,
+"gross": 98000,
+"unit": 98000,
+"retailRef": "moisturizing mask 50 ml — retail 62 300 Ft"
+},
+{
+"id": "p11",
+"idx": 11,
+"name": "24/7 complex h serum SALON SIZE 50 ml",
+"qty": 1,
+"gross": 47200,
+"unit": 47200,
+"retailRef": "24/7 complex h serum 30 ml — retail 44 900 Ft"
+},
+{
+"id": "p12",
+"idx": 12,
+"name": "24/7 couperose serum SALON SIZE 50 ml",
+"qty": 1,
+"gross": 46800,
+"unit": 46800,
+"retailRef": "24/7 couperose serum 30 ml — retail 38 300 Ft"
+},
+{
+"id": "p13",
+"idx": 13,
+"name": "24/7 balancer serum SALON SIZE 50 ml",
+"qty": 1,
+"gross": 46800,
+"unit": 46800,
+"retailRef": "24/7 balancer serum 30 ml — retail 38 300 Ft"
+},
+{
+"id": "p14",
+"idx": 14,
+"name": "24/7 sensitive fluid SALON SIZE 50 ml",
+"qty": 1,
+"gross": 47900,
+"unit": 47900,
+"retailRef": "24/7 sensitive fluid 30 ml — retail 38 800 Ft"
+},
+{
+"id": "p15",
+"idx": 15,
+"name": "DR. KLEANTHOUS cellular system SKIN SUPPORT (detox) SALON SIZE 200 ml",
+"qty": 1,
+"gross": 52300,
+"unit": 52300,
+"retailRef": "detox 100 ml — retail 54 000 Ft"
+},
+{
+"id": "p16",
+"idx": 16,
+"name": "SkinTone deep cleansing lotion SALON SIZE 500 ml",
+"qty": 1,
+"gross": 22600,
+"unit": 22600,
+"retailRef": "deep cleansing lotion 200 ml — retail 23 200 Ft"
+},
+{
+"id": "p17",
+"idx": 17,
+"name": "SkinTone refreshing cleansing water SALON SIZE 500 ml",
+"qty": 1,
+"gross": 22600,
+"unit": 22600,
+"retailRef": "refreshing cleansing water 200 ml — retail 22 800 Ft"
+},
+{
+"id": "p18",
+"idx": 18,
+"name": "SkinTone Xtreme c.s.m. serum SALON SIZE 125 ml",
+"qty": 1,
+"gross": 113600,
+"unit": 113600
+},
+{
+"id": "p19",
+"idx": 19,
+"name": "SkinTone sono beauty lifting IMPACT c.s.m. gel SALON SIZE",
+"qty": 1,
+"gross": 222700,
+"unit": 222700
+},
+{
+"id": "p20",
+"idx": 20,
+"name": "Sonostar Matrix ultrahang gép (25 programos)",
+"qty": 1,
+"gross": 3190000,
+"unit": 3190000,
+"kind": "device"
+},
+{
+"id": "p21",
+"idx": 21,
+"name": "24/7 face pack acerola cherry formula SALON SIZE 500 ml",
+"qty": 1,
+"gross": 28200,
+"unit": 28200
+},
+{
+"id": "p22",
+"idx": 22,
+"name": "24/7 packsolution balancer SALON SIZE 125 ml",
+"qty": 1,
+"gross": 28800,
+"unit": 28800,
+"note": "akné/balancer pakolás-fázis"
+},
+{
+"id": "p23",
+"idx": 23,
+"name": "24/7 packsolution dry skin phase 1 SALON SIZE 125 ml",
+"qty": 1,
+"gross": 13400,
+"unit": 13400,
+"note": "száraz/firming pakolás-fázis"
+},
+{
+"id": "p24",
+"idx": 24,
+"name": "24/7 packsolution dry skin phase 2 SALON SIZE 125 ml",
+"qty": 1,
+"gross": 25900,
+"unit": 25900,
+"note": "száraz/firming pakolás-fázis"
+},
+{
+"id": "p25",
+"idx": 25,
+"name": "24/7 packsolution extra rich SALON SIZE 125 ml",
+"qty": 1,
+"gross": 30400,
+"unit": 30400
+},
+{
+"id": "p26",
+"idx": 26,
+"name": "24/7 zink fluid SALON SIZE 50 ml",
+"qty": 1,
+"gross": 17500,
+"unit": 17500,
+"note": "firming/száraz és balancer kezelésnél említett hatóanyag (zink)"
+}
+],
+"routines": [
+{
+"name": "Vízhiányos bőr rutin",
+"skin": "Száraz / vízhiányos",
+"items": [
+{
+"n": "24/7 cleansing foam 190 ml",
+"retail": 19800,
+"beszN": 9600
+},
+{
+"n": "24/7 day cream 50 ml",
+"retail": 36800,
+"beszN": 17800
+},
+{
+"n": "24/7 eye cream 30 ml",
+"retail": 37000,
+"beszN": 17900
+},
+{
+"n": "24/7 night cream 50 ml",
+"retail": 38700,
+"beszN": 18700
+},
+{
+"n": "24/7 tonic foam 190 ml",
+"retail": 17700,
+"beszN": 8500
+},
+{
+"n": "SkinTone sensitive enzyme peeling 50 ml",
+"retail": 32800,
+"beszN": 15800
+},
+{
+"n": "24/7 complex h serum 30 ml",
+"retail": 44900,
+"beszN": 21600
+}
+]
+},
+{
+"name": "Anti-aging rutin",
+"skin": "Érett / anti-aging",
+"items": [
+{
+"n": "SkinTone c.s.m. cream 50 ml",
+"retail": 91300,
+"beszN": 44000
+},
+{
+"n": "SkinTone c.s.m. eye mask 30 ml",
+"retail": 64900,
+"beszN": 31300
+},
+{
+"n": "SkinTone c.s.m. moisturizing mask 50 ml",
+"retail": 62300,
+"beszN": 30000
+},
+{
+"n": "SkinTone deep cleansing lotion 200 ml",
+"retail": 23200,
+"beszN": 11200
+},
+{
+"n": "SkinTone refreshing cleansing water 200 ml",
+"retail": 22800,
+"beszN": 11000
+},
+{
+"n": "SkinTone sensitive enzyme peeling 50 ml",
+"retail": 32800,
+"beszN": 15800
+},
+{
+"n": "SkinTone IMPACT c.s.m. gel 50 ml",
+"retail": 104800,
+"beszN": 50500
+}
+]
+},
+{
+"name": "Luxus bőrápolás rutin",
+"skin": "Luxus (arany/platina)",
+"items": [
+{
+"n": "DR. KLEANTHOUS cellular system cleanser 125 ml",
+"retail": 22000,
+"beszN": 10600
+},
+{
+"n": "DR. KLEANTHOUS cellular system cream 50 ml",
+"retail": 216000,
+"beszN": 104200
+},
+{
+"n": "DR. KLEANTHOUS cellular system eye gel 15 ml",
+"retail": 60500,
+"beszN": 29100
+},
+{
+"n": "DR. KLEANTHOUS cellular system liquid 125 ml",
+"retail": 20200,
+"beszN": 9700
+},
+{
+"n": "DR. KLEANTHOUS cellular system mask 50 ml",
+"retail": 63200,
+"beszN": 30500
+},
+{
+"n": "DR. KLEANTHOUS cellular system SKIN SUPPORT (detox) 100 ml",
+"retail": 54000,
+"beszN": 26100
+}
+]
+},
+{
+"name": "Rozaceás bőr rutin",
+"skin": "Rosacea / couperose",
+"items": [
+{
+"n": "24/7 balancer cream 50 ml",
+"retail": 34800,
+"beszN": 16800
+},
+{
+"n": "24/7 repair mask 50 ml",
+"retail": 36800,
+"beszN": 17800
+},
+{
+"n": "SkinTone sensitive enzyme peeling 50 ml",
+"retail": 32800,
+"beszN": 15800
+},
+{
+"n": "24/7 couperose serum 30 ml",
+"retail": 38300,
+"beszN": 18400
+},
+{
+"n": "24/7 sensitive cleanser 2 in 1 200 ml",
+"retail": 29200,
+"beszN": 14100
+}
+]
+},
+{
+"name": "Aknés bőr rutin",
+"skin": "Problémás / akné",
+"items": [
+{
+"n": "24/7 balancer cream 50 ml",
+"retail": 34800,
+"beszN": 16800
+},
+{
+"n": "24/7 balancer mask 50 ml",
+"retail": 34800,
+"beszN": 16800
+},
+{
+"n": "24/7 cleansing foam 190 ml",
+"retail": 19800,
+"beszN": 9600
+},
+{
+"n": "24/7 tonic foam 190 ml",
+"retail": 17700,
+"beszN": 8500
+},
+{
+"n": "24/7 balancer serum 30 ml",
+"retail": 38300,
+"beszN": 18400
+}
+]
+},
+{
+"name": "Érzékeny bőr rutin",
+"skin": "Érzékeny",
+"items": [
+{
+"n": "24/7 sensitive cream 50 ml",
+"retail": 38200,
+"beszN": 18400
+},
+{
+"n": "SkinTone sensitive enzyme peeling 50 ml",
+"retail": 32800,
+"beszN": 15800
+},
+{
+"n": "24/7 sensitive cleanser 2 in 1 200 ml",
+"retail": 29200,
+"beszN": 14100
+},
+{
+"n": "24/7 sensitive fluid 30 ml",
+"retail": 38800,
+"beszN": 18700
+}
+]
+},
+{
+"name": "SOS szépülés rutin",
+"skin": "SOS / alkalmi",
+"items": [
+{
+"n": "SkinTone sensitive enzyme peeling 50 ml",
+"retail": 32800,
+"beszN": 15800
+},
+{
+"n": "24/7 sensitive cleanser 2 in 1 200 ml",
+"retail": 29200,
+"beszN": 14100
+},
+{
+"n": "SKINJECTION instant hydro lifting patch face 17 ml",
+"retail": 16800,
+"beszN": 8100
+}
+]
+},
+{
+"name": "Cellulit stop rutin",
+"skin": "Test / cellulit",
+"items": [
+{
+"n": "KLEANTHOUS masszázs kefe",
+"retail": 20300,
+"beszN": null
+},
+{
+"n": "SILIA body shape cream 200 ml",
+"retail": 48400,
+"beszN": 23300
+},
+{
+"n": "SILIA body shape foam 190 ml",
+"retail": 48300,
+"beszN": 23300
+}
+]
+},
+{
+"name": "Kismama bőrápolás rutin",
+"skin": "Kismama",
+"items": [
+{
+"n": "SILIA perfect bust 100 ml",
+"retail": 39300,
+"beszN": 19000
+},
+{
+"n": "SILIA shampoo 200 ml",
+"retail": 27300,
+"beszN": 13200
+},
+{
+"n": "SILIA sun protection SPF 20 100 ml",
+"retail": 31000,
+"beszN": 15000
+},
+{
+"n": "SkinTone c.s.m. body cream 200 ml",
+"retail": 65900,
+"beszN": 31700
+}
+]
+},
+{
+"name": "Hajhullás kezelés rutin",
+"skin": "Hajhullás",
+"items": [
+{
+"n": "SILIA shampoo 200 ml",
+"retail": 27300,
+"beszN": 13200
+},
+{
+"n": "SILIA hair conditioner 200 ml",
+"retail": 26700,
+"beszN": 12900
+}
+]
+}
+],
+"order363": [
+{
+"cikk": "V341",
+"db": 2,
+"nev": "sensitive cleanser 2in1",
+"beszN": 14100,
+"ajB": 29200
+},
+{
+"cikk": "V331",
+"db": 2,
+"nev": "sensitive cream",
+"beszN": 18400,
+"ajB": 38200
+},
+{
+"cikk": "M041",
+"db": 2,
+"nev": "cellular system cleanser",
+"beszN": 10600,
+"ajB": 22000
+},
+{
+"cikk": "M051",
+"db": 2,
+"nev": "cellular system liquid",
+"beszN": 9700,
+"ajB": 20200
+},
+{
+"cikk": "S041",
+"db": 2,
+"nev": "c.s.m. eye mask / szemmaszk",
+"beszN": 31300,
+"ajB": 64900
+},
+{
+"cikk": "V041",
+"db": 2,
+"nev": "repair mask",
+"beszN": 17800,
+"ajB": 36800
+},
+{
+"cikk": "S031",
+"db": 2,
+"nev": "c.s.m. Impact gel (anti-wrinkle)",
+"beszN": 50500,
+"ajB": 104800
+},
+{
+"cikk": "M021",
+"db": 2,
+"nev": "cellular system eye gel",
+"beszN": 29100,
+"ajB": 60500
+},
+{
+"cikk": "S101",
+"db": 2,
+"nev": "c.s.m. moisturizing mask",
+"beszN": 30000,
+"ajB": 62300
+},
+{
+"cikk": "S121",
+"db": 2,
+"nev": "Xtreme c.s.m. cream",
+"beszN": 70900,
+"ajB": 147100
+},
+{
+"cikk": "M031",
+"db": 2,
+"nev": "cellular system mask",
+"beszN": 30500,
+"ajB": 63200
+},
+{
+"cikk": "S111",
+"db": 2,
+"nev": "Xtreme c.s.m. serum",
+"beszN": 50500,
+"ajB": 104800
+},
+{
+"cikk": "V351",
+"db": 2,
+"nev": "sensitive fluid",
+"beszN": 18700,
+"ajB": 38800
+},
+{
+"cikk": "B071",
+"db": 2,
+"nev": "body shape cream",
+"beszN": 23300,
+"ajB": 48400
+},
+{
+"cikk": "B091",
+"db": 2,
+"nev": "body shape foam",
+"beszN": 23300,
+"ajB": 48300
+},
+{
+"cikk": "B251",
+"db": 2,
+"nev": "hair growth serum",
+"beszN": 39800,
+"ajB": 82400
+},
+{
+"cikk": "B041",
+"db": 2,
+"nev": "shampoo",
+"beszN": 13200,
+"ajB": 27300
+},
+{
+"cikk": "V111",
+"db": 2,
+"nev": "balancer serum",
+"beszN": 18400,
+"ajB": 38300
+},
+{
+"cikk": "V161",
+"db": 2,
+"nev": "complex h serum",
+"beszN": 21600,
+"ajB": 44900
+},
+{
+"cikk": "V101",
+"db": 2,
+"nev": "couperose serum",
+"beszN": 18400,
+"ajB": 38300
+},
+{
+"cikk": "V131",
+"db": 2,
+"nev": "high performance serum",
+"beszN": 21600,
+"ajB": 44900
+},
+{
+"cikk": "V121",
+"db": 2,
+"nev": "firming serum",
+"beszN": 21600,
+"ajB": 44900
+}
+],
+"totals": {
+"salon362": 4490900,
+"retail363": 1482300,
+"device": 3190000
+}
 };
 const HUF=new Intl.NumberFormat('hu-HU'); const fmt=n=>HUF.format(Math.round(n));
 const PMAP={}; PAIR.products.forEach(p=>PMAP[p.id]=p);
@@ -486,6 +1869,69 @@ document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>
     document.getElementById('fed-rank').innerHTML=rows.map(r=>`<div class="rankrow"><span class="nm" title="${r.name}">${r.name}</span>
       <span class="track"><span class="fill" style="width:${(r.perMin/max*100).toFixed(0)}%"></span></span><span class="val">${fmt(r.perMin)} Ft/p</span></div>`).join('');})();
   R.sort((a,b)=>b.perMin-a.perMin); render();
+})();
+
+/* ===== ⑤ PROFIT-KALKULÁTOR ===== */
+(function(){
+  const afa=PROFIT.afa, $=id=>document.getElementById(id);
+  const tsel=$('pf-treat');
+  PROFIT.treatments.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=t.name+' ('+t.material.toLocaleString('hu-HU')+' Ft anyag)';tsel.appendChild(o);});
+  function P(){return{price:+$('pf-price').value/100, guests:+$('pf-guests').value, xs:+$('pf-xs').value/100, basket:+$('pf-basket').value, treat:+$('pf-treat').value};}
+  function recalc(){
+    const p=P();
+    $('pf-priceLabel').textContent=Math.round(p.price*100)+'%';
+    $('pf-guestsLabel').textContent=p.guests;
+    $('pf-xsLabel').textContent=Math.round(p.xs*100)+'%';
+    $('pf-basketLabel').textContent=fmt(p.basket)+' Ft';
+
+    // A · retail termék-profit
+    const rows=PROFIT.retail.map(r=>{const elB=r.ajB*p.price, elN=elB/afa, arr=elN-r.beszN;
+      return {...r, elB, elN, arr, pct:arr/elN, mk:elB/r.beszN};}).sort((a,b)=>b.arr-a.arr);
+    $('pf-retail').innerHTML=rows.map(r=>`<tr><td class="tname">${r.nev}<span class="seg">${r.vonal}</span></td>
+      <td class="num ft">${r.ml}</td><td class="num">${fmt(r.beszN)} <span class="ft">Ft</span></td>
+      <td class="num">${fmt(r.elB)} <span class="ft">Ft</span></td><td class="num pos">${fmt(r.arr)} <span class="ft">Ft</span></td>
+      <td class="num pct">${Math.round(r.pct*100)}%</td><td class="num mult">${r.mk.toFixed(2)}×</td></tr>`).join('');
+    const avgRatio=rows.reduce((s,r)=>s+r.arr/r.elB,0)/rows.length; // árrés/bruttó eladás
+
+    // C · rutin-profit
+    const rut=PROFIT.routines.map(rt=>{const ret=rt.items.reduce((s,it)=>s+it.retail,0)*p.price;
+      const besz=rt.items.reduce((s,it)=>s+(it.beszN||0),0); const profN=ret/afa-besz;
+      return {name:rt.name, skin:rt.skin, ret, besz, profN, pct:profN/(ret/afa)};}).sort((a,b)=>b.profN-a.profN);
+    $('pf-routines').innerHTML=rut.map(r=>`<tr><td class="tname">${r.name}</td><td class="ft">${r.skin}</td>
+      <td class="num">${fmt(r.ret)} <span class="ft">Ft</span></td><td class="num">${fmt(r.besz)} <span class="ft">Ft</span></td>
+      <td class="num pos">${fmt(r.profN)} <span class="ft">Ft</span></td><td class="num pct">${Math.round(r.pct*100)}%</td></tr>`).join('');
+
+    // B + D · vendég-érték és megtérülés
+    const t=PROFIT.treatments[p.treat];
+    const tFed=t.retailMin*p.price - t.material;            // kezelés anyag-fedezet (ártényezővel)
+    const basketArr=p.basket*avgRatio;                       // a retail kosáron a TUB árrése (nettó)
+    const guestValue=tFed + p.xs*basketArr;
+    const mTreat=p.guests*tFed, mRetail=p.guests*p.xs*basketArr, mTotal=mTreat+mRetail;
+    const invest=PROFIT.totals.salon362+PROFIT.totals.retail363;
+    const payback=mTotal>0?invest/mTotal:Infinity;
+
+    $('pf-dash').innerHTML=`
+      <div class="dcard"><div class="dl">Havi össz-fedezet</div><div class="dv">${fmt(mTotal)} <small>Ft</small></div></div>
+      <div class="dcard"><div class="dl">Éves össz-fedezet</div><div class="dv">${fmt(mTotal*12)} <small>Ft</small></div></div>
+      <div class="dcard hl"><div class="dl">Induló beszerzés megtérülése</div><div class="dv">${payback===Infinity?'—':payback.toFixed(1)} <small>hónap</small></div></div>
+      <div class="dcard"><div class="dl">Profit / vendég (átlag)</div><div class="dv">${fmt(guestValue)} <small>Ft</small></div></div>`;
+
+    $('pf-guest').innerHTML=`
+      <div class="kv"><span>Választott kezelés</span><b>${t.name}</b></div>
+      <div class="kv"><span>Kezelés anyag-fedezet (eladás×ártényező − anyag)</span><b>${fmt(tFed)} Ft</b></div>
+      <div class="kv"><span>Retail kosár árrése (${fmt(p.basket)} Ft × ~${Math.round(avgRatio*100)}%)</span><b>${fmt(basketArr)} Ft</b></div>
+      <div class="kv"><span>Cross-sell hozzájárulás (${Math.round(p.xs*100)}% vendég)</span><b>${fmt(p.xs*basketArr)} Ft</b></div>
+      <div class="kv total"><span>Átlagos profit / vendég</span><b>${fmt(guestValue)} Ft</b></div>`;
+
+    $('pf-roi').innerHTML=`
+      <div class="kv"><span>Induló beszerzés (362 szalon + 363 retail)</span><b>${fmt(invest)} Ft</b></div>
+      <div class="kv"><span>— ebből gép (Sonostar Matrix)</span><b>${fmt(PROFIT.totals.device)} Ft</b></div>
+      <div class="kv"><span>Havi kezelés-fedezet (${p.guests} vendég)</span><b>${fmt(mTreat)} Ft</b></div>
+      <div class="kv"><span>Havi retail-árrés (cross-sell)</span><b>${fmt(mRetail)} Ft</b></div>
+      <div class="kv total"><span>Megtérülés</span><b>${payback===Infinity?'— (állíts vendégszámot)':payback.toFixed(1)+' hónap'}</b></div>`;
+  }
+  ['pf-price','pf-guests','pf-xs','pf-basket','pf-treat'].forEach(id=>$(id).addEventListener('input',recalc));
+  recalc();
 })();
 
 document.getElementById('foot').innerHTML=
